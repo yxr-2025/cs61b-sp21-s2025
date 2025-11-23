@@ -16,9 +16,7 @@ public class Tile {
     }
 
     /** Return my current row. */
-    public int row() {
-        return row;
-    }
+    public int row() { return row; }
 
     /** Return my current column. */
     public int col() {

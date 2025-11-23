@@ -3,40 +3,43 @@ package game2048;
 import java.util.Formatter;
 import java.util.Observable;
 
-
-/** The state of a game of 2048.
- *  @author TODO: YOUR NAME HERE
+/** 表示一局 2048 游戏的状态。
+ *  @author Yxr
  */
-public class Model extends Observable {
-    /** Current contents of the board. */
+public class Model extends Observable
+{
+    /** 当前棋盘的内容。 */
     private Board board;
-    /** Current score. */
+    /** 当前得分。 */
     private int score;
-    /** Maximum score so far.  Updated when game ends. */
+    /** 历史最高得分。游戏结束时会更新。 */
     private int maxScore;
-    /** True iff game is ended. */
+    /** 如果游戏已结束则为 true。 */
     private boolean gameOver;
 
-    /* Coordinate System: column C, row R of the board (where row 0,
-     * column 0 is the lower-left corner of the board) will correspond
-     * to board.tile(c, r).  Be careful! It works like (x, y) coordinates.
+    /* 坐标系统说明：
+     * 棋盘上的列 C、行 R（其中第 0 行、第 0 列是棋盘左下角）
+     * 对应 board.tile(c, r)。
+     * 注意！这类似于 (x, y) 坐标：列 = x，行 = y。
      */
 
-    /** Largest piece value. */
+    /** 最大方块的值（获胜条件）。 */
     public static final int MAX_PIECE = 2048;
 
-    /** A new 2048 game on a board of size SIZE with no pieces
-     *  and score 0. */
-    public Model(int size) {
+    /** 创建一个空的 2048 游戏，棋盘大小为 SIZE，初始无方块，得分为 0。 */
+    public Model(int size)
+    {
         board = new Board(size);
         score = maxScore = 0;
         gameOver = false;
     }
 
-    /** A new 2048 game where RAWVALUES contain the values of the tiles
-     * (0 if null). VALUES is indexed by (row, col) with (0, 0) corresponding
-     * to the bottom-left corner. Used for testing purposes. */
-    public Model(int[][] rawValues, int score, int maxScore, boolean gameOver) {
+    /** 用于测试的构造方法：
+     *  使用 RAWVALUES 初始化棋盘（0 表示空位），
+     *  RAWVALUES 按 [行][列] 索引，(0, 0) 对应棋盘左下角。
+     */
+    public Model(int[][] rawValues, int score, int maxScore, boolean gameOver)
+    {
         int size = rawValues.length;
         board = new Board(rawValues, score);
         this.score = score;
@@ -44,41 +47,44 @@ public class Model extends Observable {
         this.gameOver = gameOver;
     }
 
-    /** Return the current Tile at (COL, ROW), where 0 <= ROW < size(),
-     *  0 <= COL < size(). Returns null if there is no tile there.
-     *  Used for testing. Should be deprecated and removed.
-     *  */
-    public Tile tile(int col, int row) {
+    /** 返回位置 (COL, ROW) 上当前的方块，其中 0 <= ROW < size()，0 <= COL < size()。
+     *  如果该位置为空，则返回 null。
+     *  此方法仅用于测试，未来可能会被弃用。
+     */
+    public Tile tile(int col, int row)
+    {
         return board.tile(col, row);
     }
 
-    /** Return the number of squares on one side of the board.
-     *  Used for testing. Should be deprecated and removed. */
+    /** 返回棋盘一边的格子数量（即棋盘大小）。
+     *  此方法仅用于测试，未来可能会被弃用。
+     */
     public int size() {
         return board.size();
     }
 
-    /** Return true iff the game is over (there are no moves, or
-     *  there is a tile with value 2048 on the board). */
-    public boolean gameOver() {
+    /** 如果游戏结束（无合法操作，或棋盘上出现值为 2048 的方块），则返回 true。 */
+    public boolean gameOver()
+    {
         checkGameOver();
-        if (gameOver) {
+        if (gameOver)
+        {
             maxScore = Math.max(score, maxScore);
         }
         return gameOver;
     }
 
-    /** Return the current score. */
+    /** 返回当前得分。 */
     public int score() {
         return score;
     }
 
-    /** Return the current maximum game score (updated at end of game). */
+    /** 返回历史最高得分（在游戏结束时更新）。 */
     public int maxScore() {
         return maxScore;
     }
 
-    /** Clear the board to empty and reset the score. */
+    /** 清空棋盘并重置得分为 0。 */
     public void clear() {
         score = 0;
         gameOver = false;
@@ -86,105 +92,238 @@ public class Model extends Observable {
         setChanged();
     }
 
-    /** Add TILE to the board. There must be no Tile currently at the
-     *  same position. */
-    public void addTile(Tile tile) {
+    /** 将 TILE 添加到棋盘上。
+     *  要求该位置当前没有其他方块。
+     */
+    public void addTile(Tile tile)
+    {
         board.addTile(tile);
         checkGameOver();
         setChanged();
     }
 
-    /** Tilt the board toward SIDE. Return true iff this changes the board.
+    /** 将棋盘向 SIDE 方向倾斜（滑动）。
+     *  如果棋盘状态发生变化，则返回 true。
      *
-     * 1. If two Tile objects are adjacent in the direction of motion and have
-     *    the same value, they are merged into one Tile of twice the original
-     *    value and that new value is added to the score instance variable
-     * 2. A tile that is the result of a merge will not merge again on that
-     *    tilt. So each move, every tile will only ever be part of at most one
-     *    merge (perhaps zero).
-     * 3. When three adjacent tiles in the direction of motion have the same
-     *    value, then the leading two tiles in the direction of motion merge,
-     *    and the trailing tile does not.
-     * */
-    public boolean tilt(Side side) {
+     *  合并规则如下：
+     *  1. 如果在滑动方向上有两个相邻方块的值相同，则它们会合并为一个值为原值两倍的新方块，
+     *     并将新值加到 score 中。
+     *  2. 一次滑动中，一个由合并产生的方块不能再参与另一次合并。
+     *     也就是说，每个方块在一次滑动中最多只参与一次合并（也可能不参与）。
+     *  3. 如果在滑动方向上有三个连续相同值的方块，则**最靠前的两个**会合并，
+     *     第三个（靠后的）不会参与此次合并。
+     */
+    public boolean tilt(Side side)
+    {
         boolean changed;
         changed = false;
 
-        // TODO: Modify this.board (and perhaps this.score) to account
-        // for the tilt to the Side SIDE. If the board changed, set the
-        // changed local variable to true.
+        board.setViewingPerspective(side);
+        for (int i = 0; i < board.size(); i++)
+        {
+            if (processCol(i) == true)
+            {
+                changed = true;
+            }
+        }
 
+        // 如果棋盘上的任何内容发生变化，我们必须将 changed 局部变量设置为 true
+        // 通知 GUI 有内容需要绘制
         checkGameOver();
-        if (changed) {
+        if (changed)
+        {
             setChanged();
+        }
+        board.setViewingPerspective(Side.NORTH);
+        return changed;
+    }
+
+    /** 处理一列的移动和合并逻辑 */
+    private boolean processCol(int col)
+    {
+        int boardsize = board.size();
+        boolean changed = false;
+        boolean[] merged= new boolean[4];
+        for (int i = 0; i < boardsize; i++)
+        {
+            Tile t1 = board.tile(col, boardsize - i - 1);
+            // 从上往下遍历到tile后,向上遍历到board边界或tile
+            if (t1 != null)
+            {
+                if (boardsize - i >= boardsize) { continue; }
+                for (int j = boardsize - i; j < boardsize; j++) /** j边界似乎有问题 */
+                {
+                    Tile t2 = board.tile(col, j);
+                    //
+                    if (j == 3 && t2 == null)
+                    {
+                        board.move(col, j, t1);
+                        changed = true;
+                        break;
+                    }
+                    else if (t2 != null)
+                    {
+                        // t2没有merge过,t1.value() == t2.value()
+                        if (merged[j] == false && t1.value() == t2.value())
+                        {
+                            board.move(col, j, t1);
+                            merged[j] = true;
+                            score += t2.value() * 2;
+                            changed = true;
+                            break;
+                        }
+                        else
+                        {
+                            board.move(col, j -1, t1);
+                            changed = true;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         return changed;
     }
 
-    /** Checks if the game is over and sets the gameOver variable
-     *  appropriately.
-     */
-    private void checkGameOver() {
+    /** 检查游戏是否结束，并相应地设置 gameOver 变量。 */
+    private void checkGameOver()
+    {
         gameOver = checkGameOver(board);
     }
 
-    /** Determine whether game is over. */
-    private static boolean checkGameOver(Board b) {
+    /** 判断游戏是否结束。 */
+    private static boolean checkGameOver(Board b)
+    {
         return maxTileExists(b) || !atLeastOneMoveExists(b);
     }
 
-    /** Returns true if at least one space on the Board is empty.
-     *  Empty spaces are stored as null.
-     * */
-    public static boolean emptySpaceExists(Board b) {
-        // TODO: Fill in this function.
+    /** 如果棋盘上至少有一个空格（即值为 null），则返回 true。
+     *  空格在棋盘中以 null 表示。
+     */
+    public static boolean emptySpaceExists(Board b)
+    {
+        int size = b.size();
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                if (b.tile(i, j) == null)
+                {
+                    return  true;
+                }
+            }
+        }
         return false;
     }
 
     /**
-     * Returns true if any tile is equal to the maximum valid value.
-     * Maximum valid value is given by MAX_PIECE. Note that
-     * given a Tile object t, we get its value with t.value().
+     * 如果棋盘上任意一个方块的值等于最大有效值（MAX_PIECE），则返回 true。
+     * 注意：给定一个 Tile 对象 t，可通过 t.value() 获取其数值。
+     * @helper : ai.qwen 3 pro
      */
-    public static boolean maxTileExists(Board b) {
-        // TODO: Fill in this function.
+    public static boolean maxTileExists(Board b)
+    {
+        int size = b.size();
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                Tile t = b.tile(i, j);
+                if (t != null && t.value() == MAX_PIECE)
+                {
+                    return  true;
+                }
+            }
+        }
         return false;
     }
 
     /**
-     * Returns true if there are any valid moves on the board.
-     * There are two ways that there can be valid moves:
-     * 1. There is at least one empty space on the board.
-     * 2. There are two adjacent tiles with the same value.
+     * 如果棋盘上存在至少一个合法操作，则返回 true。
+     * 合法操作有两种情况：
+     * 1. 棋盘上至少有一个空格。
+     * 2. 存在两个相邻（上下左右）且值相同的方块。
      */
-    public static boolean atLeastOneMoveExists(Board b) {
-        // TODO: Fill in this function.
+    public static boolean atLeastOneMoveExists(Board b)
+    {
+        for (int i = 0; i < b.size(); i++)
+        {
+            for (int j = 0; j < b.size(); j++)
+            {
+                Tile t = b.tile(i, j);
+                if (t == null)
+                {
+                    return true;
+                }
+
+                // east
+                if (i + 1 < b.size())
+                {
+                    Tile n = b.tile(i + 1, j);
+                    if (n != null && n.value() == t.value())
+                    {
+                        return true;
+                    }
+                }
+                // weast
+                if (i - 1 >= 0)
+                {
+                    Tile s = b.tile(i - 1, j);
+                    if (s != null && s.value() == t.value())
+                    {
+                        return true;
+                    }
+                }
+                // north
+                if (j + 1 < b.size())
+                {
+                    Tile e = b.tile(i, j + 1);
+                    if (e != null && e.value() == t.value())
+                    {
+                        return true;
+                    }
+                }
+                // south
+                if (j - 1 >= 0)
+                {
+                    Tile w = b.tile(i, j - 1);
+                    if (w != null && w.value() == t.value())
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
-
 
     @Override
-     /** Returns the model as a string, used for debugging. */
+    /** 将模型以字符串形式返回，用于调试。 */
     public String toString() {
         Formatter out = new Formatter();
         out.format("%n[%n");
-        for (int row = size() - 1; row >= 0; row -= 1) {
-            for (int col = 0; col < size(); col += 1) {
-                if (tile(col, row) == null) {
+        for (int row = size() - 1; row >= 0; row -= 1)
+        {
+            for (int col = 0; col < size(); col += 1)
+            {
+                if (tile(col, row) == null)
+                {
                     out.format("|    ");
-                } else {
+                }
+                else
+                {
                     out.format("|%4d", tile(col, row).value());
                 }
             }
             out.format("|%n");
         }
-        String over = gameOver() ? "over" : "not over";
-        out.format("] %d (max: %d) (game is %s) %n", score(), maxScore(), over);
+        String over = gameOver() ? "已结束" : "未结束";
+        out.format("] %d (最高: %d) (游戏 %s) %n", score(), maxScore(), over);
         return out.toString();
     }
 
     @Override
-    /** Returns whether two models are equal. */
+    /** 判断两个模型是否相等。 */
     public boolean equals(Object o) {
         if (o == null) {
             return false;
@@ -196,7 +335,7 @@ public class Model extends Observable {
     }
 
     @Override
-    /** Returns hash code of Model’s string. */
+    /** 返回该模型字符串表示的哈希码。 */
     public int hashCode() {
         return toString().hashCode();
     }

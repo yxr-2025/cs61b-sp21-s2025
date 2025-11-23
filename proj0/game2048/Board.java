@@ -10,13 +10,15 @@ import java.util.Random;
 /**
  * @author hug
  */
-public class Board implements Iterable<Tile> {
+public class Board implements Iterable<Tile>
+{
     /** Current contents of the board. */
     private Tile[][] values;
     /** Side that the board currently views as north. */
     private Side viewPerspective;
 
-    public Board(int size) {
+    public Board(int size)
+    {
         values = new Tile[size][size];
         viewPerspective = Side.NORTH;
     }
@@ -28,17 +30,22 @@ public class Board implements Iterable<Tile> {
 
     /** Create a board where RAWVALUES hold the values of the tiles on the board 
      * (0 is null) with a current score of SCORE and the viewing perspective set to north. */
-    public Board(int[][] rawValues, int score) {
+    public Board(int[][] rawValues, int score)
+    {
         int size = rawValues.length;
         values = new Tile[size][size];
         viewPerspective = Side.NORTH;
-        for (int col = 0; col < size; col += 1) {
-            for (int row = 0; row < size; row += 1) {
+        for (int col = 0; col < size; col += 1)
+        {
+            for (int row = 0; row < size; row += 1)
+            {
                 int value = rawValues[size - 1 - row][col];
                 Tile tile;
                 if (value == 0) {
                     tile = null;
-                } else {
+                }
+                else
+                {
                     tile = Tile.create(value, col, row);
                 }
                 values[col][row] = tile;
@@ -85,19 +92,24 @@ public class Board implements Iterable<Tile> {
      *
      * Returns whether or not this move is a merge.
      * */
-    public boolean move(int col, int row, Tile tile) {
+    public boolean move(int col, int row, Tile tile)
+    {
         int pcol = viewPerspective.col(col, row, size()),
                 prow = viewPerspective.row(col, row, size());
-        if (tile.col() == pcol && tile.row() == prow) {
+        if (tile.col() == pcol && tile.row() == prow)
+        {
             return false;
         }
         Tile tile1 = vtile(col, row, viewPerspective);
         values[tile.col()][tile.row()] = null;
 
-        if (tile1 == null) {
+        if (tile1 == null)
+        {
             values[pcol][prow] = tile.move(pcol, prow);
             return false;
-        } else {
+        }
+        else
+        {
             values[pcol][prow] = tile.merge(pcol, prow, tile1);
             return true;
         }
