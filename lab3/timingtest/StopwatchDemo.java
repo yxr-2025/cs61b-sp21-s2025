@@ -7,7 +7,8 @@ import edu.princeton.cs.algs4.Stopwatch;
  */
 public class StopwatchDemo {
     /** Computes the nth Fibonacci number using a slow naive recursive strategy.*/
-    private static int fib(int n) {
+    private static int fib(int n)
+    {
         if (n < 0) {
             return 0;
         }
@@ -17,7 +18,8 @@ public class StopwatchDemo {
         return fib(n - 1) + fib(n - 2);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         Stopwatch sw = new Stopwatch();
         int fib41 = fib(41);
         double timeInSeconds = sw.elapsedTime();
