@@ -94,13 +94,6 @@ public class ArrayDeque<T> implements Deque<T>
         return size;
     }
 
-    // 如果双端队列为空，则返回 true ，否则返回 false 。
-    @Override
-    public boolean isEmpty()
-    {
-        return size == 0;
-    }
-
     //头到尾打印双端队列中的项目，项目之间用空格分隔。所有项目打印完后，换行
     @Override
     public void printDeque()

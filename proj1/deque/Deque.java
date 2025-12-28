@@ -21,7 +21,10 @@ public interface Deque<T>
     int size();
     // 返回双端队列中项目的数量，缓存实现
 
-    boolean isEmpty();
+    default boolean isEmpty()
+    {
+        return this.size() == 0;
+    }
     // 如果双端队列为空，则返回 true ，否则返回 false 。
 
     void printDeque();
@@ -32,5 +35,7 @@ public interface Deque<T>
 
     //Deque 接口不应实现 Iterable ，
     // 而应仅由两个实现类 LinkedListDeque 和 ArrayDeque 实现
+
+    //kk
 
 }

@@ -1,15 +1,13 @@
-import org.hamcrest.internal.ArrayIterator;
-
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class Arrayset<T> implements Iterable<T>
+public class ArraySet<T> implements Iterable<T>
 {
     private T[] items;
     private int size;
     private int capacity = 100;
 
-    public Arrayset()
+    public ArraySet()
     {
         this.items = (T[]) new Object[this.capacity];
         this.size = 0;
@@ -42,6 +40,7 @@ public class Arrayset<T> implements Iterable<T>
 
     private void resize(int x)
     {
+        @SuppressWarnings("unchecked") //抑制泛型警告
         T[] temp = (T[]) new Object[x];
         System.arraycopy(items, 0, temp, 0, this.size);
         items = temp;
@@ -52,16 +51,45 @@ public class Arrayset<T> implements Iterable<T>
         return this.size;
     }
 
-    /*
+    @SafeVarargs
+    public static <T> ArraySet<T> of(T...element)
+    {
+        ArraySet<T> set = new ArraySet<>();
+        for (T e : element)     {set.add(e);}
+        return set;
+    }
+
     @Override
     public boolean equals(Object other)
     {
         if (this == other)  return true;
-        if (!(other instanceof Arrayset<?>))    return false;
-        Arrayset<T> o = (Arrayset<T>) other;
+
+        if (!(other instanceof ArraySet<?>))    return false;
+
+        ArraySet<T> o = (ArraySet<T>) other;
+
+        if (this.size != o.size) return false;
+
+        for (int i = 0; i < this.size; i++)
+        {
+            if (!(o.contain(this.items[i]))) return false;
+        }
+        return true;
     }
 
-     */
+    // 用stringbuilder
+    @Override
+    public String toString()
+    {
+        if (size == 0)  {return null;}
+        StringBuilder sb = new StringBuilder("{");
+        for(int i = 0; i < this.size - 1; i++)
+        {
+            sb.append(items[i]).append(", ");
+        }
+        sb.append(items[size - 1]).append("}");
+        return sb.toString();
+    }
 
 
     @Override
@@ -90,5 +118,5 @@ public class Arrayset<T> implements Iterable<T>
             return items[this.wizPos++];
         }
     }
-*/
+
 }
