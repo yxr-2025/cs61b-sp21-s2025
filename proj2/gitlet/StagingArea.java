@@ -8,8 +8,7 @@ import java.util.TreeSet;
 import static gitlet.Repository.GITLET_DIR;
 import static gitlet.Utils.join;
 
-public class StagingArea implements Serializable
-{
+public class StagingArea implements Serializable {
     /**
      *  added 和 removed 集合。
      *   对外api：包含 add(fileName, sha1)、remove(fileName)、clear() 等方法。
@@ -30,56 +29,51 @@ public class StagingArea implements Serializable
     // （暂存准备删除的文件）
     private TreeSet removed;
 
-    public StagingArea()
-    {
+    public StagingArea() {
         this.added = new TreeMap<>();
         this.removed = new TreeSet<>();
     }
 
     // 去重过的文件
-    public void stage(String fileName, String sha1)
-    {
+    public void stage(String fileName, String sha1) {
         this.added.put(fileName, sha1);
     }
 
     // stage暂存
-    public void unstage(String fileName)
-    {
+    public void unstage(String fileName) {
         this.added.remove(fileName);
     }
 
-    public void stageForRemoval(String fileName)
-    {
+    public void stageForRemoval(String fileName) {
         this.removed.add(fileName);
     }
 
-    public void unstageForRemoval(String fileName)
-    {
+    public void unstageForRemoval(String fileName) {
         this.removed.remove(fileName);
     }
 
-    public boolean isSameStaged(String name, String hash)
-    {
+    public boolean isSameStaged(String name, String hash) {
         String stagedHash = this.added.get(name);
         return hash.equals(stagedHash);
     }
 
-    public boolean isInStaged(String fileName)
-    {
+    public boolean isInStaged(String fileName) {
         return this.added.containsKey(fileName);
     }
 
-    public boolean isInUnstaged(String fileName)
-    {
+    public boolean isInUnstaged(String fileName) {
         return this.removed.contains(fileName);
     }
 
-    public TreeMap getAddedFiles()  {return this.added;}
+    public TreeMap getAddedFiles(){
+        return this.added;
+    }
 
-    public TreeSet getRemovedFiles()    {return this.removed;}
+    public TreeSet getRemovedFiles(){
+        return this.removed;
+    }
 
-    public void clear()
-    {
+    public void clear() {
         this.added.clear();
         this.removed.clear();
     }
@@ -89,20 +83,15 @@ public class StagingArea implements Serializable
         Utils.writeObject(INDEX_FILE, this);
     }
 
-    public static StagingArea load()
-    {
-        if(INDEX_FILE.exists())
-        {
+    public static StagingArea load() {
+        if(INDEX_FILE.exists()) {
             return Utils.readObject(INDEX_FILE, StagingArea.class);
-        }
-        else
-        {
+        } else {
             return new StagingArea();
         }
     }
 
-    public String getHash(String fileName)
-    {
+    public String getHash(String fileName) {
         return this.added.get(fileName);
     }
 }

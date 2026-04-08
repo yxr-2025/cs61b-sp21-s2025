@@ -3,10 +3,8 @@ import java.io.File;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
 import static gitlet.Repository.COMMITS_DIR;
-import static gitlet.Repository.HEADS_DIR;
-import static gitlet.Utils.join;
+
 
 // 待办：在此添加你需要的任何导入语句
 
@@ -32,36 +30,30 @@ public class Commit implements Serializable{
     private Date timestamp;
 
     /** 记录“文件名”到“Blob SHA-1”的映射快照。 */
-    private TreeMap<String, String> Snapshot;
+    private TreeMap<String, String> snapShot;
 
 
-    public Commit(String message, String p1, String p2, StagingArea s)
-    {
+    public Commit(String message, String p1, String p2, StagingArea s) {
         this.message = message;
         this.p1 = p1;
         this.p2 = p2;
         this.timestamp = new Date();
-        this.Snapshot = updateMap(s);
+        this.snapShot = updateMap(s);
     }
 
-    public Commit()
-    {
+    public Commit() {
         this.message = "initial commit";
         this.p1 = null;
         this.p2 = null;
         this.timestamp = new Date(0);
-        this.Snapshot = new TreeMap<>();
+        this.snapShot = new TreeMap<>();
     }
 
-    public void add_file(String fileName, String blogHash)
-    {
-        Snapshot.put(fileName, blogHash);
-    }
 
-    public TreeMap updateMap(StagingArea s)
-    {
+
+    public TreeMap updateMap(StagingArea s) {
         // 继承
-        TreeMap<String, String> oldSnapshot = getHeadCommit().Snapshot;
+        TreeMap<String, String> oldSnapshot = getHeadCommit().snapShot;
         TreeMap<String, String> newSnapshot = new TreeMap<>();
 
         // 新增
@@ -78,8 +70,7 @@ public class Commit implements Serializable{
         return newSnapshot;
     }
 
-    public String saveCommit()
-    {
+    public String saveCommit() {
         // 序列化-生成sah1作为文件名-存入硬盘
         String commitID = getSAH1();
         File commitFile = Utils.join(COMMITS_DIR, commitID);
@@ -89,15 +80,13 @@ public class Commit implements Serializable{
 
 
     // 只负责生成哈希码
-    public String getSAH1()
-    {
+    public String getSAH1() {
         byte[] commitBytes = Utils.serialize(this);
         return Utils.sha1(commitBytes);
     }
     // 对外暴露的只负责生成哈希码的方法， 外部只知道一个commit对象
 
-    public static Commit getCommitByHash(String commitHash)
-    {
+    public static Commit getCommitByHash(String commitHash) {
         if (commitHash == null) return null;
         File currentCommitFile = Utils.join(COMMITS_DIR, commitHash);
         if (!currentCommitFile.exists()) return null;
@@ -105,25 +94,22 @@ public class Commit implements Serializable{
     }
 
     /** 组合拳：直接拿到当前 HEAD 指向的 Commit 对象 */
-    public static Commit getHeadCommit()
-    {
+    public static Commit getHeadCommit() {
         String BranchName = Repository.getCurrentBranchName();
         String currenrCommitHash = Repository.getCommitHashBybranch(BranchName);
         return getCommitByHash(currenrCommitHash);
     }
 
     // 意图明确：这个文件和当前 Commit 里的版本一样吗？
-    public boolean isSameAsCurrentCommit(String fileName, String currentFileHash)
-    {
-        String commitFileHash = this.Snapshot.get(fileName);
+    public boolean isSameAsCurrentCommit(String fileName, String currentFileHash) {
+        String commitFileHash = this.snapShot.get(fileName);
         return currentFileHash.equals(commitFileHash); // 里面隐藏了去找当前 Commit、读取字典等所有脏活累活
     }
 
     public String getP1()   {return this.p1;}
     public String getP2()   {return this.p2;}
 
-    public String getDate()
-    {
+    public String getDate() {
         SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.US);
         return sdf.format(this.timestamp);
     }
@@ -140,16 +126,14 @@ public class Commit implements Serializable{
 
     public TreeMap<String, String> getSnapshot()
     {
-        return this.Snapshot;
+        return this.snapShot;
     }
 
-    public static List<String> getParents(String commitHash)
-    {
+    public static List<String> getParents(String commitHash) {
         Commit currentCommit = getCommitByHash(commitHash);
         List<String> parentsCommitHash = new LinkedList<>();
         if (currentCommit.p1 != null)    parentsCommitHash.add(currentCommit.p1);
         if (currentCommit.p2 != null)    parentsCommitHash.add(currentCommit.p2);
         return parentsCommitHash;
     }
-
 }
