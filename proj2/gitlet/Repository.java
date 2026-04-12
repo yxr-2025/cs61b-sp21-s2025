@@ -610,7 +610,7 @@ public class Repository {
         Commit targetCommit = Commit.getCommitByHash(commitHash);
 
         // 0. 预处理
-        validateCommitAndConflicts(targetCommit, s);
+        validateCommitAndConflicts(targetCommit);
 
         // 1. 清理不再需要的文件
         clearObsoleteFiles(targetCommit);
