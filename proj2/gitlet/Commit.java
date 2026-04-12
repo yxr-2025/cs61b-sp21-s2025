@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import static gitlet.Repository.COMMITS_DIR;
+import static gitlet.Utils.readObject;
 
 
 // 待办：在此添加你需要的任何导入语句
@@ -87,10 +88,24 @@ public class Commit implements Serializable{
     // 对外暴露的只负责生成哈希码的方法， 外部只知道一个commit对象
 
     public static Commit getCommitByHash(String commitHash) {
-        if (commitHash == null) return null;
-        File currentCommitFile = Utils.join(COMMITS_DIR, commitHash);
-        if (!currentCommitFile.exists()) return null;
-        return Utils.readObject(currentCommitFile, Commit.class);
+        // 1. 如果输入就是 40 位，直接读取
+        if (commitHash.length() == 40) {
+            File f = new File(COMMITS_DIR, commitHash);
+            if (f.exists()) {
+                return readObject(f, Commit.class);
+            }
+            return null;
+        }
+
+        // 2. 如果输入小于 40 位，视为前缀，遍历文件夹查找
+        List<String> allIds = Utils.plainFilenamesIn(COMMITS_DIR);
+        for (String fullId : allIds) {
+            if (fullId.startsWith(commitHash)) {
+                return readObject(new File(COMMITS_DIR, fullId), Commit.class);
+            }
+        }
+
+        return null; // 彻底没找到
     }
 
     /** 组合拳：直接拿到当前 HEAD 指向的 Commit 对象 */

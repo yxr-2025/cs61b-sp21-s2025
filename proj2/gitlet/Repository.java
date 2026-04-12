@@ -299,6 +299,7 @@ public class Repository {
          * 如果有多个这样的提交，它会把 id 打印出来，分开行。
          * 提交消息是单操作数;要表示多词消息，操作数在引号中表示，就像下面的 commit 命令一样
          */
+        boolean isFinded = false;
 
         // 扫描把文件变为可遍历对象
         List<String> commitHashes = Utils.plainFilenamesIn(COMMITS_DIR);
@@ -311,7 +312,12 @@ public class Repository {
             String commitMessage = c.getMessage();
             if (commitMessage.equals(message)) {
                 System.out.println(hash);
+                isFinded = true;
             }
+        }
+
+        if (!isFinded){
+            System.out.println("Found no commit with that message.");
         }
     }
 
