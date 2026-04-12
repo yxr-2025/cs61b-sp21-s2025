@@ -495,7 +495,7 @@ public class Repository {
         StagingArea s = StagingArea.load();
 
         // 0. 各种预检 (Pre-checks)
-        Commit targetCommit = validateBranchAndConflicts(branchName, s);
+        Commit targetCommit = validateBranchAndConflicts(branchName);
 
         // 1. 清理不再需要的文件
         clearObsoleteFiles(targetCommit);
@@ -507,7 +507,7 @@ public class Repository {
         finalizeCheckout(branchName, s);
     }
 
-    private static Commit validateBranchAndConflicts(String branchName, StagingArea s) {
+    private static Commit validateBranchAndConflicts(String branchName) {
         File branchFile =  Utils.join(HEADS_DIR, branchName);
 
         if (!branchFile.exists()) {
@@ -576,7 +576,6 @@ public class Repository {
 
     private static boolean isCheckUntrackedConflict(Commit targetCommit) {
         // 文件在当前 Commit 中是被跟踪的，那么它在 reset 或 checkout 时被修改或删除是安全的
-        Commit headCommit = Commit.getHeadCommit();
         Set<String> untrackedFiles = getUntrackedFiles();
 
         for (String fileName : untrackedFiles) {
@@ -623,7 +622,7 @@ public class Repository {
         finalizeReset(commitHash, s);
     }
 
-    private static void validateCommitAndConflicts(Commit targetCommit, StagingArea s) {
+    private static void validateCommitAndConflicts(Commit targetCommit) {
         if (targetCommit == null) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
@@ -658,7 +657,7 @@ public class Repository {
 
         String targetCommitHash = Utils.readContentsAsString(f);
 
-        Commit targetCommit = mergePreChecks(s, targetCommitHash);
+        Commit targetCommit = mergePreChecks(s, branchName);
 
         Commit splitCommit = searchSplit(headCommitHash, targetCommitHash, branchName);
 
