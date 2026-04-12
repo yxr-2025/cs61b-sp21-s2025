@@ -198,6 +198,7 @@ public class Repository {
         s.clear();
         String commitID = newCommit.getSAH1();
         updateCurrentBranch(commitID);
+        // 生成newcommit id
         newCommit.saveCommit();
         s.clear();
         s.save();
@@ -622,6 +623,7 @@ public class Repository {
             System.exit(0);
         }
         // 文件在当前 Commit 中是被跟踪的，那么它在 reset 或 checkout 时被修改或删除是安全的
+        // 有未追踪文件在targetcommit
         if (isCheckUntrackedConflict(targetCommit)) {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
             System.exit(0);
@@ -661,9 +663,8 @@ public class Repository {
         String message = "Merged " + branchName + " into " +currentBranchName + ".";
 
         Commit newCommit = new Commit(message, headCommitHash, targetCommitHash, s);
-        String commitID = newCommit.getSAH1();
+        String commitID = newCommit.saveCommit();
         updateCurrentBranch(commitID);
-        newCommit.saveCommit();
 
         s.clear();
         s.save();

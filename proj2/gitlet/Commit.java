@@ -51,10 +51,10 @@ public class Commit implements Serializable{
 
 
 
-    public TreeMap updateMap(StagingArea s) {
+    public TreeMap<String, String> updateMap(StagingArea s) {
         // 继承
         TreeMap<String, String> oldSnapshot = getHeadCommit().snapShot;
-        TreeMap<String, String> newSnapshot = new TreeMap<>();
+        TreeMap<String, String> newSnapshot = new TreeMap<>(oldSnapshot);
 
         // 新增
         newSnapshot.putAll(s.getAddedFiles());
@@ -72,7 +72,7 @@ public class Commit implements Serializable{
 
     public String saveCommit() {
         // 序列化-生成sah1作为文件名-存入硬盘
-        String commitID = getSAH1();
+        String commitID = this.getSAH1();
         File commitFile = Utils.join(COMMITS_DIR, commitID);
         Utils.writeObject(commitFile, this);
         return commitID;
