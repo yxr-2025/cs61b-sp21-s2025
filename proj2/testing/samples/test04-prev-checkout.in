@@ -1,4 +1,4 @@
-# Check that we can check out a previous version.
+#Check that we can check out a previous version.
 I definitions.inc
 > init
 <<<

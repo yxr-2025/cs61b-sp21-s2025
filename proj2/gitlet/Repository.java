@@ -153,6 +153,11 @@ public class Repository {
     private static void addDoubleHelper(String fileName, StagingArea s) {
         File file = Utils.join(CWD, fileName);
 
+        if (!file.exists()){
+            System.out.println("File does not exist.");
+            return;
+        }
+
         byte[] fileBytes = Utils.readContents(file);
 
         String fileHash = Utils.sha1(fileBytes);
@@ -176,8 +181,9 @@ public class Repository {
     }
 
     public static void commitHelper(String message) {
-        if (message == null) {
+        if (message == null || message.isEmpty()) {
             System.out.println("Please enter a commit message.");
+            return; // 别忘了 return，否则程序会继续往下跑！
         }
 
         StagingArea s = StagingArea.load();
@@ -193,6 +199,7 @@ public class Repository {
         String commitID = newCommit.getSAH1();
         updateCurrentBranch(commitID);
         newCommit.saveCommit();
+        s.clear();
         s.save();
     }
 
@@ -252,12 +259,18 @@ public class Repository {
     }
 
     private static void rmHelper(String fileName, StagingArea s) {
+        Commit headCommit = Commit.getHeadCommit();
+
+        // 未被追踪
+        if (s.isInStaged(fileName) || headCommit.getSnapshot().containsKey(fileName)) {
+            System.out.println("No reason to remove the file.");
+            return;
+        }
+
         // 情况 A： 如果文件在暂存区，直接取消暂存（unstage）
         s.unstage(fileName);
 
         // 情况 B： 如果文件在当前 Commit 里，标记为“待删除”（removedFiles），并从工作目录物理删除
-        Commit headCommit = Commit.getHeadCommit();
-
         // if fileName in headCommit -> s.stageForRemoval(fileName)
         if (headCommit.getSnapshot().containsKey(fileName))
         {
@@ -404,20 +417,33 @@ public class Repository {
         System.out.println();
     }
 
-    private static void printUntrackedFiles() {
+    private static Set<String> getUntrackedFiles()
+    {
         StagingArea s = StagingArea.load();
         Commit c = Commit.getHeadCommit();
-        List<String> cwdFiles = Utils.plainFilenamesIn(CWD);
+        Set<String> untrackerFile = new TreeSet<>();
 
-        System.out.println("=== Untracked Files ===");
+        // 获取工作区所有的file名
+        List<String> cwdFiles = Utils.plainFilenamesIn(CWD);
 
         // 排序
         Collections.sort(cwdFiles);
 
         for (String fileName : cwdFiles) {
             if ((!c.getSnapshot().containsKey(fileName)) && (!s.isInStaged(fileName)) && (!s.isInUnstaged(fileName))) {
-                System.out.printf("%s%n", fileName);
+                untrackerFile.add(fileName);
             }
+        }
+        return untrackerFile;
+    }
+
+    private static void printUntrackedFiles() {
+        System.out.println("=== Untracked Files ===");
+
+        Set<String> untrackFile = getUntrackedFiles();
+
+        for (String fileName : untrackFile) {
+            System.out.printf("%s%n", fileName);
         }
         System.out.println();
     }
@@ -542,15 +568,13 @@ public class Repository {
     }
 
     private static boolean isCheckUntrackedConflict(Commit targetCommit, StagingArea s) {
+        // 文件在当前 Commit 中是被跟踪的，那么它在 reset 或 checkout 时被修改或删除是安全的
         Commit headCommit = Commit.getHeadCommit();
+        Set<String> untrackedFiles = getUntrackedFiles();
 
-        for (String fileName : targetCommit.getSnapshot().keySet()) {
-            File f = Utils.join(CWD, fileName);
-
-            if (f.exists()) {
-                if (!headCommit.getSnapshot().containsKey(fileName) && !s.isInStaged(fileName)) {
-                    return true;
-                }
+        for (String fileName : untrackedFiles) {
+            if (targetCommit.getSnapshot().containsKey(fileName)){
+                return true;
             }
         }
         return false;
@@ -597,6 +621,7 @@ public class Repository {
             System.out.println("No commit with that id exists.");
             System.exit(0);
         }
+        // 文件在当前 Commit 中是被跟踪的，那么它在 reset 或 checkout 时被修改或删除是安全的
         if (isCheckUntrackedConflict(targetCommit, s)) {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
             System.exit(0);
