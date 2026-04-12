@@ -262,7 +262,7 @@ public class Repository {
         Commit headCommit = Commit.getHeadCommit();
 
         // 未被追踪
-        if (s.isInStaged(fileName) || headCommit.getSnapshot().containsKey(fileName)) {
+        if (!s.isInStaged(fileName) && !headCommit.getSnapshot().containsKey(fileName)) {
             System.out.println("No reason to remove the file.");
             return;
         }
@@ -516,7 +516,7 @@ public class Repository {
 
         Commit targetCommit = Commit.getCommitByHash(targetCommitHash);
 
-        if (isCheckUntrackedConflict(targetCommit, s)) {
+        if (isCheckUntrackedConflict(targetCommit)) {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
             System.exit(0);
         }
@@ -567,7 +567,7 @@ public class Repository {
         Utils.writeContents(f, content);
     }
 
-    private static boolean isCheckUntrackedConflict(Commit targetCommit, StagingArea s) {
+    private static boolean isCheckUntrackedConflict(Commit targetCommit) {
         // 文件在当前 Commit 中是被跟踪的，那么它在 reset 或 checkout 时被修改或删除是安全的
         Commit headCommit = Commit.getHeadCommit();
         Set<String> untrackedFiles = getUntrackedFiles();
@@ -622,7 +622,7 @@ public class Repository {
             System.exit(0);
         }
         // 文件在当前 Commit 中是被跟踪的，那么它在 reset 或 checkout 时被修改或删除是安全的
-        if (isCheckUntrackedConflict(targetCommit, s)) {
+        if (isCheckUntrackedConflict(targetCommit)) {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
             System.exit(0);
         }
@@ -693,7 +693,7 @@ public class Repository {
 
         Commit targetCommit = Commit.getCommitByHash(targetCommitHash);
 
-        if (isCheckUntrackedConflict(targetCommit, s)) {
+        if (isCheckUntrackedConflict(targetCommit)) {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
             System.exit(0);
         }
