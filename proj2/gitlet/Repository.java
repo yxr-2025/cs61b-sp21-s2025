@@ -648,7 +648,7 @@ public class Repository {
 
     public static void mergeHelper(String branchName) {
         StagingArea s = StagingArea.load();
-        String headCommitHash = getCommitHashBybranch(branchName);
+        String headCommitHash = getCommitHashBybranch(getCurrentBranchName());
         File f = Utils.join(HEADS_DIR, branchName);
 
         boolean hasconflit = false;
@@ -732,9 +732,6 @@ public class Repository {
         // 分裂点 == 目标分支头
         if (ancestors.containsKey(targetCommitHash)) {
             System.out.println("Given branch is an ancestor of the current branch.");
-            System.out.println("Debug: Head Hash is " + headCommitHash);
-            System.out.println("Debug: Target Hash is " + targetCommitHash);
-            System.out.println("Debug: Ancestors map contains: " + ancestors.keySet());
             System.exit(0);
         }
 
