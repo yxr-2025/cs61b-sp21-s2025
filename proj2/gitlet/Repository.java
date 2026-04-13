@@ -832,7 +832,6 @@ public class Repository {
         File f = Utils.join(CWD, fileName);
         Utils.writeContents(f, newFile);
         addDoubleHelper(fileName, s);
-        System.out.println("Encountered a merge conflict.");
 
         return true;
     }
