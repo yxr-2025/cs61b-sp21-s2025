@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import static gitlet.Repository.COMMITS_DIR;
-import static gitlet.Utils.readObject;
 
 
 // 待办：在此添加你需要的任何导入语句
@@ -92,7 +91,7 @@ public class Commit implements Serializable{
         if (commitHash.length() == 40) {
             File f = new File(COMMITS_DIR, commitHash);
             if (f.exists()) {
-                return readObject(f, Commit.class);
+                return Utils.readObject(f, Commit.class);
             }
             return null;
         }
@@ -101,7 +100,7 @@ public class Commit implements Serializable{
         List<String> allIds = Utils.plainFilenamesIn(COMMITS_DIR);
         for (String fullId : allIds) {
             if (fullId.startsWith(commitHash)) {
-                return readObject(new File(COMMITS_DIR, fullId), Commit.class);
+                return Utils.readObject(new File(COMMITS_DIR, fullId), Commit.class);
             }
         }
 

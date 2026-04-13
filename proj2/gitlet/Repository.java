@@ -482,7 +482,7 @@ public class Repository {
 
         // 第二优先级：能否找到文件
         if (!c.getSnapshot().containsKey(fileName)) {
-            System.out.println("No commit with that id exists.");
+            System.out.println("File does not exist in that commit.");
             System.exit(0);
         }
 
@@ -709,7 +709,7 @@ public class Repository {
 
     // 先染色，后捕捉
     private static Commit searchSplit(String headCommitHash, String targetCommitHash, String branchName) {
-        // 第一步：标记当前分支的所有祖先
+        // 第一步：标记head分支的所有祖先
         Map<String, Integer> ancestors = new HashMap<>();
         Queue<String> queue = new LinkedList<>();
 
@@ -719,11 +719,11 @@ public class Repository {
         // 下一步没到头
         while (!queue.isEmpty()) {
             String currentHash = queue.poll();
-            int currentDistent = ancestors.get(currentHash);
+            int currentDistence = ancestors.get(currentHash);
 
             for (String p : Commit.getParents(currentHash)) {
                 if (!ancestors.containsKey(p)) {
-                    ancestors.put(p, currentDistent + 1);
+                    ancestors.put(p, currentDistence + 1);
                     queue.add(p);
                 }
             }
@@ -732,6 +732,9 @@ public class Repository {
         // 分裂点 == 目标分支头
         if (ancestors.containsKey(targetCommitHash)) {
             System.out.println("Given branch is an ancestor of the current branch.");
+            System.out.println("Debug: Head Hash is " + headCommitHash);
+            System.out.println("Debug: Target Hash is " + targetCommitHash);
+            System.out.println("Debug: Ancestors map contains: " + ancestors.keySet());
             System.exit(0);
         }
 
