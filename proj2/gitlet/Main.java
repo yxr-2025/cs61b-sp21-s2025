@@ -28,6 +28,12 @@ public class Main {
      */
     public static void main(String[] args) {
         // 待办：如果 args 为空数组怎么办？
+        if (args.length == 0)
+        {
+            System.out.println("Please enter a command.");
+            return;
+        }
+
         String firstArg = args[0];
         switch(firstArg) {
             case "init":
@@ -68,6 +74,9 @@ public class Main {
                 break;
             case "merge":
                 Repository.mergeHelper(args[1]);
+                break;
+            default:
+                System.out.println("No command with that name exists.");
                 break;
 
         }

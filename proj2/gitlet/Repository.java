@@ -655,9 +655,9 @@ public class Repository {
 
         Commit headCommit = Commit.getHeadCommit();
 
-        String targetCommitHash = Utils.readContentsAsString(f);
-
         Commit targetCommit = mergePreChecks(s, branchName);
+
+        String targetCommitHash = Utils.readContentsAsString(f);
 
         Commit splitCommit = searchSplit(headCommitHash, targetCommitHash, branchName);
 
