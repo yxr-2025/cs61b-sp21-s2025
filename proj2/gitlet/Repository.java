@@ -781,7 +781,7 @@ public class Repository {
                 // 如果动的一样 - 跳过
             }
             // 听 Given 的：意味着你要把 Given 分支的意志强加给当前的工作区，所以必须处理文件 IO。
-            else if (!changedInT && changedInH) {
+            else if (changedInT && !changedInH) {
                 overwriteCWDandStage(fileName, targetFileId, sa);
             }
             // 听 head 的：意味着你认可了当前工作区的状态，所以只需保持静默。
@@ -812,7 +812,7 @@ public class Repository {
         }
 
         String targetFile = "";
-        if (headFileId != null) {
+        if (targetFileId != null) {
             File tFile = Utils.join(BLOB_DIR, targetFileId);
             targetFile = Utils.readContentsAsString(tFile);
         }
