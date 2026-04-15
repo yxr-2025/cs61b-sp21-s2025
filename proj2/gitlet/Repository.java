@@ -132,8 +132,17 @@ public class Repository {
 
     // 通过branch分支名（String）读取currentCommitHash
     public static String getCommitHashBybranch(String branchName) {
+        if (branchName == null) return null;
+
         File branchfile = Utils.join(HEADS_DIR, branchName);
-        if (!branchfile.exists())   return null;
+
+        if (!branchfile.exists())   {
+            branchfile = Utils.join(REMOTENAME_DIR, branchName);
+        }
+
+        if (!branchfile.exists())   {
+            return null;
+        }
         return Utils.readContentsAsString(branchfile);
     }
 
@@ -334,8 +343,11 @@ public class Repository {
 
         // 打印当前分支名
         System.out.println("=== Branches ===");
-        System.out.printf("*%s%n", currentBranchName);
 
+        if (!currentBranchName.contains("/")) {
+            System.out.printf("*%s%n", currentBranchName);
+        }
+        
         // 排序
         Collections.sort(branches);
 
