@@ -41,7 +41,7 @@ public class Repository {
 
     public static final File REMOTE_DIR = join(GITLET_DIR, "remote");
 
-    public static final File REMOTENAME_DIR = join(REFS_DIR, "remote");
+    public static final File REMOTENAME_DIR = join(REFS_DIR, "remotes");
 
     public static void init() {
         /**
