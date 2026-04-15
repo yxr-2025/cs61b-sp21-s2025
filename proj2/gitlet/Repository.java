@@ -510,6 +510,10 @@ public class Repository {
         File branchFile =  Utils.join(HEADS_DIR, branchName);
 
         if (!branchFile.exists()) {
+            branchFile = Utils.join(REMOTENAME_DIR, branchName);
+        }
+
+        if (!branchFile.exists()) {
             System.out.println("No such branch exists.");
             System.exit(0);
         }
