@@ -699,7 +699,14 @@ public class Repository {
     }
 
     private static Commit mergePreChecks(StagingArea s, String branchName, File headDir) {
+        // 1. 尝试在本地分支目录找 (refs/heads)
         File branchFile = Utils.join(headDir, branchName);
+
+        // 2. 如果本地找不到，尝试在远程分支目录找 (refs/remotes)
+        if (!branchFile.exists()) {
+            // 假设 REMOTES_DIR 是指向 .gitlet/refs/remotes 的 File 对象
+            branchFile = Utils.join(REMOTENAME_DIR, branchName);
+        }
 
         if (!s.getRemovedFiles().isEmpty() || !s.getAddedFiles().isEmpty()) {
             System.out.println("You have uncommitted changes.");
