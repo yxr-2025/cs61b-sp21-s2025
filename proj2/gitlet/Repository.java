@@ -877,21 +877,28 @@ public class Repository {
         // 读出String:  name of remote directory/.gitlet
         String DirName = Utils.readContentsAsString(remoteNameFile);
 
-        return new  File(DirName);
+        File remoteGit = new File(DirName);
+
+        if (!remoteGit.mkdirs()) {
+            System.out.println("Remote directory not found.");
+            System.exit(0);
+        }
+
+        return remoteGit;
     }
 
     // java gitlet.Main fetch [remote name] [remote branch name]
     public static void fetchHelper(String remoteName, String remoteBranchName){
 
         //找到远程目录的 .gitlet。如果不存在，打印 Remote directory not found.
-        File remoteDir = readDirFromRemoteName(remoteName);
+        File remoteGit = readDirFromRemoteName(remoteName);
 
-        File remoteBranchFile = preFetch(remoteDir, remoteBranchName);
+        File remoteBranchFile = preFetch(remoteGit, remoteBranchName);
 
         String remoteCommitHash = Utils.readContentsAsString(remoteBranchFile);
 
         // File srcGit, File destGit, String targetCommitHash
-        syncObject(remoteDir, GITLET_DIR, remoteCommitHash);
+        syncObject(remoteGit, GITLET_DIR, remoteCommitHash);
 
         updateRemoteBranchName(remoteName, remoteBranchName, remoteCommitHash);
     }
