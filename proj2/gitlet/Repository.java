@@ -1025,10 +1025,9 @@ public class Repository {
     public static void pullHelper(String remoteName, String remoteBranchName){
         fetchHelper(remoteName, remoteBranchName);
 
-        File remoteDir = readDirFromRemoteName(remoteName);
+        File remoteHeadsDir = Utils.join(REMOTENAME_DIR, remoteName, remoteBranchName);
 
-        File remoteHeadsDir = Utils.join(remoteDir, remoteName, remoteBranchName);
-
+        // .gitlet/refs/remote/remoteName/branchName
         mergeDoubleHelper(remoteBranchName, remoteHeadsDir);
     }
 
@@ -1056,6 +1055,9 @@ public class Repository {
         }
         if (!(REMOTE_DIR.exists())){
             REMOTE_DIR.mkdirs();
+        }
+        if (!REMOTENAME_DIR.exists()) {
+            REMOTENAME_DIR.mkdirs();
         }
 
     }
