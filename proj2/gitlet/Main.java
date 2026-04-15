@@ -1,4 +1,5 @@
 package gitlet;
+import static gitlet.Repository.GITLET_DIR;
 
 /** Gitlet 的驱动类，Gitlet 是 Git 版本控制系统的一个子集。
  *  @author Yxr_
@@ -25,6 +26,12 @@ public class Main {
      *  java gitlet.Main rm-branch [branch name]
      *  java gitlet.Main reset [commit id]
      *  java gitlet.Main merge [branch name]
+     *  java gitlet.Main add-remote [remote name] [name of remote directory]/.gitlet
+     *  java gitlet.Main rm-remote [remote name]
+     *  java gitlet.Main push [remote name] [remote branch name]]
+     *  java gitlet.Main fetch [remote name] [remote branch name]
+     *  java gitlet.Main pull [remote name] [remote branch name]
+     *
      */
     public static void main(String[] args) {
         // 待办：如果 args 为空数组怎么办？
@@ -35,6 +42,12 @@ public class Main {
         }
 
         String firstArg = args[0];
+
+        if (!firstArg.equals("init") &&  !GITLET_DIR.exists()) {
+            System.out.println("Not in an initialized Gitlet directory.");
+            return;
+        }
+
         switch(firstArg) {
             case "init":
                 Repository.init();
@@ -74,6 +87,21 @@ public class Main {
                 break;
             case "merge":
                 Repository.mergeHelper(args[1]);
+                break;
+            case "add-remote":
+                Repository.addRemoteHelper(args[1], args[2]);
+                break;
+            case "rm-remote":
+                Repository.rmRemoteHelper(args[1]);
+                break;
+            case "push":
+                Repository.pushHelper(args[1], args[2]);
+                break;
+            case "fetch":
+                Repository.fetchHelper(args[1], args[2]);
+                break;
+            case "pull":
+                Repository.pullHelper(args[1], args[2]);
                 break;
             default:
                 System.out.println("No command with that name exists.");

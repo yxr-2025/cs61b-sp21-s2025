@@ -28,7 +28,7 @@ public class Repository {
     public static final File COMMITS_DIR = join(OBJECTS_DIR, "commits");
 
     /** .objects 子目录 ，blobs负责存储blob对象。*/
-    public static final File BLOB_DIR = join(OBJECTS_DIR, "blogs");
+    public static final File BLOB_DIR = join(OBJECTS_DIR, "blobs");
 
     /** .gitlet 子目录 ，refs负责存储heads文件夹*/
     public static final File REFS_DIR = join(GITLET_DIR, "refs");
@@ -38,6 +38,10 @@ public class Repository {
 
     /** .gitlet 子文件  HEAD负责存储当前分支名*/
     public static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
+
+    public static final File REMOTE_DIR = join(GITLET_DIR, "remote");
+
+    public static final File REMOTENAME_DIR = join(REFS_DIR, "remote");
 
     public static void init() {
         /**
@@ -54,7 +58,7 @@ public class Repository {
         branchDoubleHelper("master", newCommitId);
 
         Utils.writeContents(HEAD_FILE, "master");
-        // updateHead(String branchName)
+        //updateHead(String branchName)
 
         new StagingArea();
     }
@@ -96,16 +100,7 @@ public class Repository {
          return initCommit.saveCommit();
     }
 
-
-    private static String readHeadToBranchName() {
-        if (!(HEAD_FILE.exists())) {
-            System.out.println("HEAD_FILE don`t exist");
-            System.exit(0);
-        }
-        return Utils.readContentsAsString(HEAD_FILE);
-    }
-
-    //保存blog,底层实现逻辑：（只负责无脑写入）
+    //保存blob,底层实现逻辑：（只负责无脑写入）
     private static void saveBlob(String fileHasID, byte[] fileBytes) {
         File bolbFile = Utils.join(BLOB_DIR, fileHasID);
         if (!bolbFile.exists())
@@ -128,6 +123,10 @@ public class Repository {
     // 通过HEAD读取当前分支名
     /** 读取 HEAD 文件，获取当前分支名 (例如 "master") */
     public static String getCurrentBranchName() {
+        if (!(HEAD_FILE.exists())) {
+            System.out.println("HEAD_FILE don`t exist");
+            System.exit(0);
+        }
         return Utils.readContentsAsString(HEAD_FILE);
     }
 
@@ -140,7 +139,7 @@ public class Repository {
 
     public static Commit searchParent(Commit lastCommit) {
         String p1 = lastCommit.getP1();
-        return Commit.getCommitByHash(p1);
+        return Commit.getCommitByHash(p1, COMMITS_DIR);
     }
 
 
@@ -288,7 +287,7 @@ public class Repository {
         // 遍历输出
         for (String hash : commitHashes) {
             // 反序列化为commit后传给 writeCommitData(Commit c, String commitHash)
-            Commit c = Commit.getCommitByHash(hash);
+            Commit c = Commit.getCommitByHash(hash, COMMITS_DIR);
             writeCommitData(c, hash);
         }
     }
@@ -307,7 +306,7 @@ public class Repository {
         // 遍历输出
         for (String hash : commitHashes) {
             // 反序列化为commit后传给 writeCommitData(Commit c, String commitHash)
-            Commit c = Commit.getCommitByHash(hash);
+            Commit c = Commit.getCommitByHash(hash, COMMITS_DIR);
 
             String commitMessage = c.getMessage();
             if (commitMessage.equals(message)) {
@@ -472,7 +471,7 @@ public class Repository {
     }
 
     private static void fetchFileFromCommit(String commitId, String fileName) {
-        Commit c = Commit.getCommitByHash(commitId);
+        Commit c = Commit.getCommitByHash(commitId, COMMITS_DIR);
 
         // 第一优先级：能否找到commit
         if (c == null) {
@@ -521,7 +520,7 @@ public class Repository {
 
         String targetCommitHash = Utils.readContentsAsString(branchFile);
 
-        Commit targetCommit = Commit.getCommitByHash(targetCommitHash);
+        Commit targetCommit = Commit.getCommitByHash(targetCommitHash, COMMITS_DIR);
 
         if (isCheckUntrackedConflict(targetCommit)) {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
@@ -607,7 +606,7 @@ public class Repository {
     public static void resetHelper(String commitHash) {
         StagingArea s = StagingArea.load();
 
-        Commit targetCommit = Commit.getCommitByHash(commitHash);
+        Commit targetCommit = Commit.getCommitByHash(commitHash, COMMITS_DIR);
 
         // 0. 预处理
         validateCommitAndConflicts(targetCommit);
@@ -646,22 +645,28 @@ public class Repository {
         s.save();
     }
 
-    public static void mergeHelper(String branchName) {
+    // 暴露给用户的
+    public static void mergeHelper(String branchName){
+        mergeDoubleHelper(branchName, HEADS_DIR);
+    }
+
+    private static void mergeDoubleHelper(String branchName, File headDir) {
         StagingArea s = StagingArea.load();
         String headCommitHash = getCommitHashBybranch(getCurrentBranchName());
-        File f = Utils.join(HEADS_DIR, branchName);
 
-        boolean hasconflit = false;
+        File f = Utils.join(headDir, branchName);
+
+        boolean hasConflit = false;
 
         Commit headCommit = Commit.getHeadCommit();
 
-        Commit targetCommit = mergePreChecks(s, branchName);
+        Commit targetCommit = mergePreChecks(s, branchName, headDir);
 
         String targetCommitHash = Utils.readContentsAsString(f);
 
         Commit splitCommit = searchSplit(headCommitHash, targetCommitHash, branchName);
 
-        if (threeWayMerge(splitCommit, headCommit, targetCommit, s)) hasconflit = true;
+        if (threeWayMerge(splitCommit, headCommit, targetCommit, s)) hasConflit = true;
 
         String currentBranchName = getCurrentBranchName();
 
@@ -674,11 +679,11 @@ public class Repository {
         s.clear();
         s.save();
 
-        if (hasconflit) System.out.println("Encountered a merge conflict.");
+        if (hasConflit) System.out.println("Encountered a merge conflict.");
     }
 
-    private static Commit mergePreChecks(StagingArea s, String branchName) {
-        File branchFile = Utils.join(HEADS_DIR, branchName);
+    private static Commit mergePreChecks(StagingArea s, String branchName, File headDir) {
+        File branchFile = Utils.join(headDir, branchName);
 
         if (!s.getRemovedFiles().isEmpty() || !s.getAddedFiles().isEmpty()) {
             System.out.println("You have uncommitted changes.");
@@ -697,7 +702,7 @@ public class Repository {
 
         String targetCommitHash = Utils.readContentsAsString(branchFile);
 
-        Commit targetCommit = Commit.getCommitByHash(targetCommitHash);
+        Commit targetCommit = Commit.getCommitByHash(targetCommitHash, COMMITS_DIR);
 
         if (isCheckUntrackedConflict(targetCommit)) {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
@@ -710,45 +715,29 @@ public class Repository {
     // 先染色，后捕捉
     private static Commit searchSplit(String headCommitHash, String targetCommitHash, String branchName) {
         // 第一步：标记head分支的所有祖先
-        Map<String, Integer> ancestors = new HashMap<>();
-        Queue<String> queue = new LinkedList<>();
-
-        queue.add(headCommitHash);
-        ancestors.put(headCommitHash, 0);
-
-        // 下一步没到头
-        while (!queue.isEmpty()) {
-            String currentHash = queue.poll();
-            int currentDistence = ancestors.get(currentHash);
-
-            for (String p : Commit.getParents(currentHash)) {
-                if (!ancestors.containsKey(p)) {
-                    ancestors.put(p, currentDistence + 1);
-                    queue.add(p);
-                }
-            }
-        }
+        Set<String> ancestors = getAncestors(headCommitHash, COMMITS_DIR);
 
         // 分裂点 == 目标分支头
-        if (ancestors.containsKey(targetCommitHash)) {
+        if (ancestors.contains(targetCommitHash)) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
         }
 
+        Queue<String> queue = new LinkedList<>();
         queue.add(targetCommitHash);
 
         while (!queue.isEmpty()) {
             String currentHash = queue.poll();
 
-            for (String p : Commit.getParents(currentHash)) {
-                if (ancestors.containsKey(p)) {
+            for (String p : Commit.getParents(currentHash, COMMITS_DIR)) {
+                if (ancestors.contains(p)) {
                     // Fast-forward
                     if (p.equals(headCommitHash)) {
                         System.out.println("Current branch fast-forwarded.");
                         checkoutBranch(branchName);
                         System.exit(0);
                     }
-                    return Commit.getCommitByHash(p);
+                    return Commit.getCommitByHash(p, COMMITS_DIR);
                 }
             }
         }
@@ -804,7 +793,7 @@ public class Repository {
     }
 
     // 读取在blob的f1，f2 合在一起，写进CWD，暂存
-    private static boolean mergeByConflict(String targetFileId, String headFileId, StagingArea s, String fileName) {
+    private static boolean mergeByConflict(String targetFileId, String headFileId, StagingArea s, String fileName){
         String headFile = "";
         if (headFileId != null) {
             File hFile = Utils.join(BLOB_DIR, headFileId);
@@ -836,6 +825,196 @@ public class Repository {
         return true;
     }
 
+    // java gitlet.Main add-remote [remote name] [name of remote directory]/.gitlet
+    public static void addRemoteHelper(String remoteName, String remoteDirectory){
+        File remoteFile = Utils.join(REMOTE_DIR, remoteName);
+
+        if (remoteFile.exists()){
+            System.out.println("A remote with that name already exists.");
+            return;
+        }
+
+        // 建立一个 remoteName 到 remoteDirectory 的映射
+        Utils.writeContents(remoteFile, remoteDirectory);
+    }
+
+    public static void rmRemoteHelper(String remoteName){
+        File remoteFile = Utils.join(REMOTE_DIR, remoteName);
+
+        if (!remoteFile.exists()){
+            System.out.println("A remote with that name does not exist.");
+            return;
+        }
+
+        Utils.restrictedDelete(remoteFile);
+    }
+
+    // 获取本地存储得远程仓库url
+    private static File readDirFromRemoteName(String remoteName){
+        File remoteNameFile = Utils.join(REMOTE_DIR, remoteName);
+
+        if (!remoteNameFile.exists()){
+            System.out.println("Remote directory not found.");
+            System.exit(0);
+        }
+
+        // 读出String:  name of remote directory/.gitlet
+        String DirName = Utils.readContentsAsString(remoteNameFile);
+
+        return new  File(DirName);
+    }
+
+    // java gitlet.Main fetch [remote name] [remote branch name]
+    public static void fetchHelper(String remoteName, String remoteBranchName){
+
+        //找到远程目录的 .gitlet。如果不存在，打印 Remote directory not found.
+        File remoteDir = readDirFromRemoteName(remoteName);
+
+        File remoteBranchFile = preFetch(remoteDir, remoteBranchName);
+
+        String remoteCommitHash = Utils.readContentsAsString(remoteBranchFile);
+
+        // File srcGit, File destGit, String targetCommitHash
+        syncObject(remoteDir, GITLET_DIR, remoteCommitHash);
+
+        updateRemoteBranchName(remoteName, remoteBranchName, remoteCommitHash);
+    }
+
+    private static File preFetch(File remoteDir, String remoteBranchName){
+        if (!remoteDir.exists()){
+            System.out.println("Remote directory not found.");
+            System.exit(0);
+        }
+
+        //读取远程的 refs/heads/[remote branch name] 获取其 branchCommit 提交的 ID。
+        File remoteBranchFile = Utils.join(remoteDir, "refs", "heads", remoteBranchName);
+
+        if (!remoteBranchFile.exists()){
+            System.out.println("That remote does not have that branch.");
+            System.exit(0);
+        }
+
+        return remoteBranchFile;
+    }
+
+    private static void syncObject(File srcGit, File destGit, String targetCommitHash){
+        //递归获取：从该提交开始，遍历其所有祖先提交。如果本地没有这个提交对象，就把它从远程的 objects 文件夹拷贝到本地。
+        File srcCommitDir = Utils.join(srcGit, "objects", "commits");
+
+        Set<String> ancestors = getAncestors(targetCommitHash, srcCommitDir);
+
+        for (String commitHash : ancestors) {
+
+            copyObject(srcGit, destGit, commitHash, "commits");
+
+            //同步 Blob：对于每个新拷贝的提交，确保其 snapshot 里的所有 Blob 也被拷贝到本地。
+            Commit targetCommit = Commit.getCommitByHash(commitHash, srcCommitDir);
+            Map<String, String> targetCommitSnapshot = targetCommit.getSnapshot();
+
+            for (String remoteblobId : targetCommitSnapshot.values()){
+                copyObject(srcGit, destGit, remoteblobId, "blobs");
+            }
+        }
+    }
+
+    private static void updateRemoteBranchName(String remoteName,
+                                               String remoteBranchName,
+                                               String remoteCommitHash){
+        //更新本地引用：在本地创建/更新 refs/remotes/[remote name]/[remote branch name]
+        File remoteNameFile = Utils.join(REMOTENAME_DIR, remoteName);
+        if (!remoteNameFile.exists())
+        {
+            remoteNameFile.mkdirs();
+        }
+        File remoteBranchFile = Utils.join(remoteNameFile, remoteCommitHash);
+        Utils.writeContents(remoteBranchFile, remoteCommitHash);
+    }
+
+    /** 将一个对象从源 Gitlet 目录拷贝到目标 Gitlet 目录
+     *  自带去重
+     */
+    private static void copyObject(File srcGit, File destGit, String objId, String DirName){
+        File srcObject = Utils.join(srcGit, "Object", DirName, objId);
+        File desDir = Utils.join(destGit, "Object", DirName);
+
+        if (!desDir.exists()){
+            desDir.mkdirs();
+        }
+
+        File desObject = Utils.join(desDir, objId);
+
+        if (!desObject.exists()) {
+            byte[] srcBytes = Utils.readContents(srcObject);
+            Utils.writeContents(desObject, srcBytes);
+        }
+    }
+
+    // 通用的逻辑来获取“从某个 Commit 开始的所有祖先节点列表”：
+    private static Set<String> getAncestors(String CommitHash, File commitFile){
+        // 第一步：标记head分支的所有祖先
+        Set<String> ancestors = new HashSet<>();
+        Queue<String> queue = new LinkedList<>();
+
+        queue.add(CommitHash);
+        ancestors.add(CommitHash);
+
+        // 下一步没到头
+        while (!queue.isEmpty()) {
+            String currentHash = queue.poll();
+
+            for (String p : Commit.getParents(currentHash, commitFile)) {
+                if (!ancestors.contains(p)) {
+                    ancestors.add(p);
+                    queue.add(p);
+                }
+            }
+        }
+        return ancestors;
+    }
+
+    // java gitlet.Main push [remote name] [remote branch name]
+    public static void pushHelper(String remoteName, String remoteBranchName){
+        // 如果远程 .gitlet 目录不存在，打印 Remote directory not found.
+        File remoteDir = readDirFromRemoteName(remoteName);
+
+        // 如果远程不存在remoteBranch，则创建
+        String remoteHeadID = null;
+
+        File remoteBranchFile = Utils.join(remoteDir, "refs", "heads", remoteBranchName);
+
+        if (remoteBranchFile.exists()) {
+            remoteHeadID = Utils.readContentsAsString(remoteBranchFile);
+        }
+
+        String localHeadHash = getCommitHashBybranch(getCurrentBranchName());
+
+        Set<String> ancestors = getAncestors(localHeadHash, COMMITS_DIR);
+
+        if (!(remoteHeadID == null) && !ancestors.contains(remoteHeadID)){
+            System.out.println("Please pull down remote changes before pushing.");
+            return;
+        }
+
+        // 搬运  // File srcGit, File destGit, String targetCommitHash
+        syncObject(GITLET_DIR, remoteDir, localHeadHash);
+
+        // 更新或创建分支 不管有没有 refs/heads/branchName
+        if (!remoteBranchFile.getParentFile().exists()) {
+            remoteBranchFile.getParentFile().mkdirs();
+        }
+        Utils.writeContents(remoteBranchFile, localHeadHash);
+    }
+
+    // java gitlet.Main pull [remote name] [remote branch name]
+    public static void pullHelper(String remoteName, String remoteBranchName){
+        fetchHelper(remoteName, remoteBranchName);
+
+        File remoteDir = readDirFromRemoteName(remoteName);
+
+        File remoteHeadsDir = Utils.join(remoteDir, "remoteName", "remoteBranchName");
+
+        mergeDoubleHelper(remoteBranchName, remoteHeadsDir);
+    }
 
     private static void DIR_CREATER() {
         if(GITLET_DIR.exists()) {
@@ -844,11 +1023,24 @@ public class Repository {
         }
         GITLET_DIR.mkdir();
 
-        if (!(OBJECTS_DIR.exists()))  {OBJECTS_DIR.mkdirs();}
-        if (!(REFS_DIR.exists()))  {REFS_DIR.mkdirs();}
-        if (!(HEADS_DIR.exists()))    {HEADS_DIR.mkdirs();}
-        if (!(COMMITS_DIR.exists()))  {COMMITS_DIR.mkdirs();}
-        if (!(BLOB_DIR.exists()))  {BLOB_DIR.mkdirs();}
+        if (!(OBJECTS_DIR.exists())){
+            OBJECTS_DIR.mkdirs();
+        }
+        if (!(REFS_DIR.exists())){
+            REFS_DIR.mkdirs();
+        }
+        if (!(HEADS_DIR.exists())){
+            HEADS_DIR.mkdirs();
+        }
+        if (!(COMMITS_DIR.exists())){
+            COMMITS_DIR.mkdirs();
+        }
+        if (!(BLOB_DIR.exists())){
+            BLOB_DIR.mkdirs();
+        }
+        if (!(REMOTE_DIR.exists())){
+            REMOTE_DIR.mkdirs();
+        }
 
     }
 }

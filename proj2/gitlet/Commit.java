@@ -86,10 +86,10 @@ public class Commit implements Serializable{
     }
     // 对外暴露的只负责生成哈希码的方法， 外部只知道一个commit对象
 
-    public static Commit getCommitByHash(String commitHash) {
+    public static Commit getCommitByHash(String commitHash, File commitDir) {
         // 1. 如果输入就是 40 位，直接读取
         if (commitHash.length() == 40) {
-            File f = new File(COMMITS_DIR, commitHash);
+            File f = new File(commitDir, commitHash);
             if (f.exists()) {
                 return Utils.readObject(f, Commit.class);
             }
@@ -97,10 +97,10 @@ public class Commit implements Serializable{
         }
 
         // 2. 如果输入小于 40 位，视为前缀，遍历文件夹查找
-        List<String> allIds = Utils.plainFilenamesIn(COMMITS_DIR);
+        List<String> allIds = Utils.plainFilenamesIn(commitDir);
         for (String fullId : allIds) {
             if (fullId.startsWith(commitHash)) {
-                return Utils.readObject(new File(COMMITS_DIR, fullId), Commit.class);
+                return Utils.readObject(new File(commitDir, fullId), Commit.class);
             }
         }
 
@@ -111,7 +111,7 @@ public class Commit implements Serializable{
     public static Commit getHeadCommit() {
         String BranchName = Repository.getCurrentBranchName();
         String currenrCommitHash = Repository.getCommitHashBybranch(BranchName);
-        return getCommitByHash(currenrCommitHash);
+        return getCommitByHash(currenrCommitHash, COMMITS_DIR);
     }
 
     // 意图明确：这个文件和当前 Commit 里的版本一样吗？
@@ -143,8 +143,8 @@ public class Commit implements Serializable{
         return this.snapShot;
     }
 
-    public static List<String> getParents(String commitHash) {
-        Commit currentCommit = getCommitByHash(commitHash);
+    public static List<String> getParents(String commitHash, File commitFile) {
+        Commit currentCommit = getCommitByHash(commitHash, commitFile);
         List<String> parentsCommitHash = new LinkedList<>();
         if (currentCommit.p1 != null)    parentsCommitHash.add(currentCommit.p1);
         if (currentCommit.p2 != null)    parentsCommitHash.add(currentCommit.p2);
