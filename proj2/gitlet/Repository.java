@@ -879,7 +879,7 @@ public class Repository {
 
         File remoteGit = new File(DirName);
 
-        if (!remoteGit.mkdirs()) {
+        if (!remoteGit.exists()) {
             System.out.println("Remote directory not found.");
             System.exit(0);
         }
