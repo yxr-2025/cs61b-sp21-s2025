@@ -930,7 +930,7 @@ public class Repository {
         {
             remoteNameFile.mkdirs();
         }
-        File remoteBranchFile = Utils.join(remoteNameFile, remoteCommitHash);
+        File remoteBranchFile = Utils.join(remoteNameFile, remoteBranchName);
         Utils.writeContents(remoteBranchFile, remoteCommitHash);
     }
 
