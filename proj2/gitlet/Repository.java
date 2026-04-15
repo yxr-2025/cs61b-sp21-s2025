@@ -862,14 +862,39 @@ public class Repository {
     }
 
     public static void rmRemoteHelper(String remoteName){
-        File remoteFile = Utils.join(REMOTE_DIR, remoteName);
+        File remoteConfigFile = Utils.join(REMOTE_DIR, remoteName);
 
-        if (!remoteFile.exists()){
+        if (!remoteConfigFile.exists()){
             System.out.println("A remote with that name does not exist.");
             return;
         }
 
-        Utils.restrictedDelete(remoteFile);
+        // 删远程远程映射的配置
+        remoteConfigFile.delete();
+
+        // 删本地存储的branchName
+        File remoteRefDir = Utils.join(REMOTENAME_DIR, remoteName);
+        if (remoteRefDir.exists()) {
+            cleanDirectory(remoteRefDir);
+        }
+    }
+
+    /** 辅助方法：递归删除目录及其内容，避免 restrictedDelete 的限制 */
+    private static void cleanDirectory(File Dir){
+        File[] files = Dir.listFiles();
+
+        if (Dir != null){
+            for (File f : files){
+                if (f.isDirectory()){
+                    cleanDirectory(f);
+                }
+                else {
+                    f.delete();
+                }
+            }
+        }
+        Dir.delete();
+
     }
 
     // 获取本地存储得远程仓库url
@@ -1039,9 +1064,9 @@ public class Repository {
     public static void pullHelper(String remoteName, String remoteBranchName){
         fetchHelper(remoteName, remoteBranchName);
 
-        File remoteHeadsDir = Utils.join(REMOTENAME_DIR, remoteName, remoteBranchName);
+        File remoteHeadsDir = Utils.join(REMOTENAME_DIR, remoteName);
 
-        // .gitlet/refs/remote/remoteName/branchName
+        // .gitlet/refs/remote/remoteName
         mergeDoubleHelper(remoteBranchName, remoteHeadsDir);
     }
 
