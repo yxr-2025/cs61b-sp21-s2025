@@ -347,7 +347,7 @@ public class Repository {
         if (!currentBranchName.contains("/")) {
             System.out.printf("*%s%n", currentBranchName);
         }
-        
+
         // 排序
         Collections.sort(branches);
 
@@ -1027,7 +1027,7 @@ public class Repository {
 
         File remoteDir = readDirFromRemoteName(remoteName);
 
-        File remoteHeadsDir = Utils.join(remoteDir, "remoteName", "remoteBranchName");
+        File remoteHeadsDir = Utils.join(remoteDir, remoteName, remoteBranchName);
 
         mergeDoubleHelper(remoteBranchName, remoteHeadsDir);
     }
