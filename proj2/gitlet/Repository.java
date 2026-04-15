@@ -1064,10 +1064,10 @@ public class Repository {
     public static void pullHelper(String remoteName, String remoteBranchName){
         fetchHelper(remoteName, remoteBranchName);
 
-        File remoteHeadsDir = Utils.join(REMOTENAME_DIR, remoteName);
+        String fullRemoteBranchName = remoteName + "/" + remoteBranchName;
 
         // .gitlet/refs/remote/remoteName
-        mergeDoubleHelper(remoteBranchName, remoteHeadsDir);
+        mergeDoubleHelper(fullRemoteBranchName, REMOTENAME_DIR);
     }
 
     private static void DIR_CREATER() {
