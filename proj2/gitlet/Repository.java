@@ -934,8 +934,8 @@ public class Repository {
      *  自带去重
      */
     private static void copyObject(File srcGit, File destGit, String objId, String DirName){
-        File srcObject = Utils.join(srcGit, "Object", DirName, objId);
-        File desDir = Utils.join(destGit, "Object", DirName);
+        File srcObject = Utils.join(srcGit, "objects", DirName, objId);
+        File desDir = Utils.join(destGit, "objects", DirName);
 
         if (!desDir.exists()){
             desDir.mkdirs();
