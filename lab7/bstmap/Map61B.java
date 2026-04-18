@@ -2,41 +2,37 @@ package bstmap;
 
 import java.util.Set;
 
-/* Your implementation BSTMap should implement this interface. To do so,
- * append "implements Map61B<K,V>" to the end of your "public class..."
- * declaration, though you can use other formal type parameters if you'd like.
+/* 你的 BSTMap 实现类应实现此接口。
+ * 实现方式：在你的 "public class..." 声明末尾加上 "implements Map61B<K,V>"，
+ * 当然你也可以使用其他泛型参数名。
  */
 public interface Map61B<K, V> extends Iterable<K> {
 
-    /** Removes all of the mappings from this map. */
+    /** 从此映射中移除所有键值对。 */
     void clear();
 
-    /* Returns true if this map contains a mapping for the specified key. */
+    /* 如果此映射包含指定键的映射关系，则返回 true。 */
     boolean containsKey(K key);
 
-    /* Returns the value to which the specified key is mapped, or null if this
-     * map contains no mapping for the key.
-     */
+    /* 返回指定键所映射到的值；如果此映射不包含该键的映射关系，则返回 null。 */
     V get(K key);
 
-    /* Returns the number of key-value mappings in this map. */
+    /* 返回此映射中键值对的数量。 */
     int size();
 
-    /* Associates the specified value with the specified key in this map. */
+    /* 在此映射中将指定值与指定键关联。 */
     void put(K key, V value);
 
-    /* Returns a Set view of the keys contained in this map. Not required for Lab 7.
-     * If you don't implement this, throw an UnsupportedOperationException. */
+    /* 返回此映射中所包含键的一个 Set 视图。
+     * Lab 7 中不要求实现。如果你不实现此方法，请抛出 UnsupportedOperationException。 */
     Set<K> keySet();
 
-    /* Removes the mapping for the specified key from this map if present.
-     * Not required for Lab 7. If you don't implement this, throw an
-     * UnsupportedOperationException. */
+    /* 如果存在，从此映射中移除指定键的映射关系。
+     * Lab 7 中不要求实现。如果你不实现此方法，请抛出 UnsupportedOperationException。 */
     V remove(K key);
 
-    /* Removes the entry for the specified key only if it is currently mapped to
-     * the specified value. Not required for Lab 7. If you don't implement this,
-     * throw an UnsupportedOperationException.*/
+    /* 仅当当前映射将指定键映射到指定值时，才移除该键的映射项。
+     * Lab 7 中不要求实现。如果你不实现此方法，请抛出 UnsupportedOperationException。 */
     V remove(K key, V value);
 
 }
