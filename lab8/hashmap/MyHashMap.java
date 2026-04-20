@@ -1,19 +1,18 @@
 package hashmap;
 
-import java.util.Collection;
+import java.util.*;
 
 /**
- *  A hash table-backed Map implementation. Provides amortized constant time
- *  access to elements via get(), remove(), and put() in the best case.
+ *  一个基于哈希表的 Map 实现。在最佳情况下，通过 get()、remove() 和 put() 访问元素的时间复杂度为均摊常数时间。
  *
- *  Assumes null keys will never be inserted, and does not resize down upon remove().
+ *  假设不会插入 null 键，并且在 remove() 时不会缩小容量。
  *  @author YOUR NAME HERE
  */
-public class MyHashMap<K, V> implements Map61B<K, V> {
 
+public class MyHashMap<K, V> implements Map61B<K, V> {
     /**
-     * Protected helper class to store key/value pairs
-     * The protected qualifier allows subclass access
+     * 用于存储键/值对的受保护辅助类
+     * protected 修饰符允许子类访问
      */
     protected class Node {
         K key;
@@ -25,67 +24,187 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         }
     }
 
-    /* Instance Variables */
+    /* 实例变量 */
     private Collection<Node>[] buckets;
-    // You should probably define some more!
 
-    /** Constructors */
-    public MyHashMap() { }
+    private double maxLoad;
 
-    public MyHashMap(int initialSize) { }
+    private int size;
+
+    public static final int defaultSize = 16;
+
+    private static final double defaultLoad = 0.75;
+
+    /** 构造方法 */
+    public MyHashMap() {
+        this(defaultSize, defaultLoad);
+    }
+
+    public MyHashMap(int initialSize) {
+        this(initialSize, defaultLoad);
+    }
 
     /**
-     * MyHashMap constructor that creates a backing array of initialSize.
-     * The load factor (# items / # buckets) should always be <= loadFactor
+     * MyHashMap 构造方法，创建一个大小为 initialSize 的底层数组。
+     * 负载因子（# 条目 / # 桶）应始终 <= loadFactor
      *
-     * @param initialSize initial size of backing array
-     * @param maxLoad maximum load factor
+     * @param initialSize 底层数组的初始大小
+     * @param maxLoad 最大负载因子
      */
-    public MyHashMap(int initialSize, double maxLoad) { }
+    public MyHashMap(int initialSize, double maxLoad) {
+        createTable(initialSize);
+        this.maxLoad = maxLoad;
+    }
 
     /**
-     * Returns a new node to be placed in a hash table bucket
+     * 返回一个要放置在哈希表桶中的新节点
      */
     private Node createNode(K key, V value) {
-        return null;
+        return new Node(key, value);
     }
 
     /**
-     * Returns a data structure to be a hash table bucket
+     * 返回一个作为哈希表桶的数据结构
      *
-     * The only requirements of a hash table bucket are that we can:
-     *  1. Insert items (`add` method)
-     *  2. Remove items (`remove` method)
-     *  3. Iterate through items (`iterator` method)
+     * Java 中的大多数数据结构都继承自 Collection，因此我们
+     * 可以使用几乎任何数据结构作为我们的桶。
      *
-     * Each of these methods is supported by java.util.Collection,
-     * Most data structures in Java inherit from Collection, so we
-     * can use almost any data structure as our buckets.
+     * 重写此方法以使用不同的数据结构作为
+     * 底层的桶类型
      *
-     * Override this method to use different data structures as
-     * the underlying bucket type
-     *
-     * BE SURE TO CALL THIS FACTORY METHOD INSTEAD OF CREATING YOUR
-     * OWN BUCKET DATA STRUCTURES WITH THE NEW OPERATOR!
+     * 务必调用此工厂方法，而不是使用 new 运算符创建
+     * 你自己的桶数据结构！
      */
     protected Collection<Node> createBucket() {
-        return null;
+        return new LinkedList<Node>();
     }
 
     /**
-     * Returns a table to back our hash table. As per the comment
-     * above, this table can be an array of Collection objects
+     * 返回一个支撑我们哈希表的表格。如上所述，
+     * 该表格可以是一个 Collection 对象的数组
      *
-     * BE SURE TO CALL THIS FACTORY METHOD WHEN CREATING A TABLE SO
-     * THAT ALL BUCKET TYPES ARE OF JAVA.UTIL.COLLECTION
+     * 在创建表格时，务必调用此工厂方法，以便
+     * 所有桶类型均为 JAVA.UTIL.COLLECTION
      *
-     * @param tableSize the size of the table to create
+     * @param tableSize 要创建的表格大小
      */
     private Collection<Node>[] createTable(int tableSize) {
+        buckets = (Collection<Node>[]) new Collection[tableSize];
+
+        for (int i = 0; i < tableSize; i += 1){
+            this.buckets[i] = createBucket();
+        }
+        return buckets;
+    }
+
+    // 在完成之前，你的代码将无法编译！
+    public void clear() {
+        this.buckets = createTable(defaultSize);
+        this.size = 0;
+    }
+
+    /** 如果此映射包含指定键的映射关系，则返回 true。 */
+    public boolean containsKey(K key) {
+        if (findNode(key) == null)  return false;
+        else                        return true;
+    }
+
+    // 放一个指针进去遍历
+    public V get(K key) {
+        Node n = findNode(key);
+
+        if (n == null) {
+            System.out.println("don`t have this key");
+            return null;
+        }
+        return n.value;
+    }
+
+    // 增加：(# 条目 / # 桶）应始终 <= loadFactor
+    // 更新：如果同一个键被多次插入，则每次都应更新对应的值
+    public void put(K key, V value) {
+        if (containsKey(key)) {
+            findNode(key).value = value;
+            return;
+        }
+
+        int index = getIndex(key);
+        Collection<Node> bucket = buckets[index];
+        bucket.add(createNode(key, value));
+        size += 1;
+
+        if ((double) size / buckets.length > maxLoad) {
+            resize(buckets.length * 2);
+        }
+    }
+
+    private void resize(int newLength) {
+        // 创建
+        Collection<Node>[] oldBuckets = buckets;
+        buckets = createTable(newLength);
+
+        // 搬运
+        for (Collection<Node> bucket : oldBuckets){
+            for (Node n : bucket) {
+                // 重新审视一下自己的位置再放
+                int index = getIndex(n.key);
+                buckets[index].add(n);
+            }
+        }
+    }
+
+    private int getIndex(K key) {
+        int hashID = key.hashCode();
+        return Math.floorMod(hashID, buckets.length);
+    }
+
+    public int size(){
+        return this.size;
+    }
+
+    public Set<K> keySet() {
+        Set<K> set = new HashSet<>();
+
+        for (Collection<Node> bucket : buckets) {
+            for (Node n : bucket) {
+                set.add(n.key);
+            }
+        }
+        return set;
+    }
+
+    public V remove(K key) {
+        throw new UnsupportedOperationException();
+    }
+
+    public V remove(K key, V value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<K> iterator() {
+        List<K> allNode = new ArrayList<>();
+
+        for (Collection<Node> bucket : buckets) {
+            for (Node n : bucket) {
+                allNode.add(n.key);
+            }
+        }
+
+        return allNode.iterator();
+    }
+
+    private Node findNode(K key) {
+        int index = getIndex(key);
+        Collection<Node> bucket = buckets[index];
+
+        for (Node n : bucket) {
+            if (n.key.equals(key)) {
+                return n;
+            }
+        }
         return null;
     }
 
-    // TODO: Implement the methods of the Map61B Interface below
-    // Your code won't compile until you do so!
 
 }
